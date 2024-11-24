@@ -1,0 +1,7 @@
+FROM tensorflow/serving:latest
+
+RUN sed -i 's/http:\/\/[a-zA-Z0-9]*.[a-zA-Z0-9]*.*.com/http:\/\/ir.ubuntu.sindad.cloud/g' /etc/apt/sources.list
+
+COPY models /models/
+
+ENV MODEL_NAME=model1,model2
