@@ -2,40 +2,60 @@ version: '3.8'
 
 services:
 
-  db:
-    container_name: db
-    image: postgres:15-alpine
-    volumes:
-      - ./postgres/data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    expose:
-      - 5432
-    restart: always
+  # db:
+  #   container_name: db
+  #   image: postgres:15-alpine
+  #   volumes:
+  #     - ./postgres/data:/var/lib/postgresql/data
+  #   environment:
+  #     - POSTGRES_DB=postgres
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #   expose:
+  #     - 5432
+  #   restart: always
 
 
-  model_server:
-    container_name: server
-    build:
-      context: .
-      dockerfile: dockerfiles/Dockerfile.model  # Dockerfile مربوط به TensorFlow Serving
+  # model_server:
+  #   container_name: server
+  #   build:
+  #     context: .
+  #     dockerfile: dockerfiles/Dockerfile.model  
+    # ports:
+    #   - "8501:8501"
+
+  tensorflow_serving:
+    container_name: serve-model
+    image: tensorflow/serving
     ports:
       - "8501:8501"
+    volumes:
+      - ./models:/models
+      - ./models_config:/models_config
+    
+    command: --model_config_file=/models_config/models.config --model_config_file_poll_wait_seconds=60
+    
+    environment:
+      - MODEL_NAME=xception_model 
+
+    expose:
+      - "8501"    
 
   web:
     container_name: web  
     build:
       context: .
-      dockerfile: dockerfiles/Dockerfile  # Dockerfile مربوط به Django
+      dockerfile: dockerfiles/Dockerfile  
     
     volumes: 
       - ./src:/usr/src/app
+     
+      
     working_dir: /usr/src/app
     command: python manage.py runserver 0.0.0.0:8000  
     ports:
       - "8000:8000"
     depends_on:
-      - model_server
-      - db
+      - tensorflow_serving
+   
+   
